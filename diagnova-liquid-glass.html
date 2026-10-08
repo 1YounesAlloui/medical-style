@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>DiagNova: blood work, understood</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com/3.4.17"></script>
+<script>
+tailwind.config={theme:{extend:{colors:{paper:'#f2f6f4',ink:'#05070d',muted:'#e4ece9',teal:{DEFAULT:'#01aa88',bright:'#16e0b0'},dim:'#5c6d75'},
+fontFamily:{sans:['"Inter Tight"','ui-sans-serif','system-ui','-apple-system','sans-serif']},borderRadius:{xl:'0.75rem'}}}}
+</script>
+<style>
+:root{--background:#f2f6f4;--foreground:#05070d;--muted-background:#e4ece9;--accent-teal:#01aa88;--accent-teal-bright:#16e0b0;--text-dim:#5c6d75;--border-color:rgba(5,7,13,.1);--radius:.75rem;
+box-sizing:border-box;padding-bottom:env(safe-area-inset-bottom,0px)}
+html{scroll-behavior:smooth}
+body{background:var(--background);color:var(--foreground);font:400 16px/1.5 "Inter Tight",ui-sans-serif,system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+h1,h2,h3{letter-spacing:-.04em;line-height:1.02}
+.glass{background:linear-gradient(135deg,rgba(255,255,255,.62),rgba(255,255,255,.22));backdrop-filter:blur(22px) saturate(160%);-webkit-backdrop-filter:blur(22px) saturate(160%);
+border:1px solid rgba(255,255,255,.7);box-shadow:0 1px 0 rgba(255,255,255,.9) inset,0 -1px 0 rgba(5,7,13,.05) inset,0 20px 50px -20px rgba(5,60,50,.28);border-radius:var(--radius)}
+.blob{position:absolute;border-radius:50%;filter:blur(70px);opacity:.75;animation:float 14s ease-in-out infinite}
+@keyframes float{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(30px,-40px) scale(1.08)}}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+.bob{animation:bob 6s ease-in-out infinite}
+.btn{display:inline-flex;align-items:center;gap:.5rem;padding:.8rem 1.4rem;border-radius:var(--radius);font-weight:600;transition:all .2s}
+.btn-ink{background:var(--foreground);color:var(--background)}
+.btn-ink:hover{background:var(--accent-teal-bright);color:var(--foreground)}
+.btn-glass{background:rgba(255,255,255,.5);border:1px solid rgba(255,255,255,.8);backdrop-filter:blur(12px)}
+.btn-glass:hover{border-color:var(--accent-teal);color:var(--accent-teal)}
+.bar{height:6px;border-radius:99px;background:rgba(5,7,13,.08);overflow:hidden}
+.bar i{display:block;height:100%;border-radius:99px}
+@media (prefers-reduced-motion:reduce){.blob,.bob{animation:none}}
+.ecg{width:100%;max-width:34rem;height:72px;overflow:visible}
+.ecg path{fill:none;stroke-linecap:round;stroke-linejoin:round;stroke-width:2.5}
+.ecg .base{stroke:rgba(5,7,13,.1)}
+.ecg .pulse{stroke:#01aa88;stroke-dasharray:230 1000;animation:sweep 2.6s linear infinite;filter:drop-shadow(0 0 6px #16e0b0)}
+@keyframes sweep{from{stroke-dashoffset:230}to{stroke-dashoffset:-1000}}
+@keyframes beat{0%,100%{transform:scale(1)}12%{transform:scale(1.28)}24%{transform:scale(1)}36%{transform:scale(1.18)}48%{transform:scale(1)}}
+.beat{animation:beat 1.3s ease-in-out infinite;transform-origin:center}
+#bg{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}#dots{position:absolute;inset:0;width:100%;height:100%}main,section,footer{position:relative;z-index:2}#hero{overflow:visible}
+@media (prefers-reduced-motion:reduce){.ecg .pulse,.beat{animation:none}}
+.glass-in{background:linear-gradient(135deg,rgba(255,255,255,.55),rgba(255,255,255,.18));backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.65);box-shadow:0 1px 0 rgba(255,255,255,.8) inset,0 12px 30px -16px rgba(5,60,50,.25);border-radius:var(--radius);transition:transform .25s,box-shadow .25s}
+.glass-in:hover{transform:translateY(-4px);box-shadow:0 1px 0 rgba(255,255,255,.9) inset,0 22px 40px -16px rgba(1,170,136,.35)}
+.panel{background:linear-gradient(135deg,rgba(255,255,255,.42),rgba(255,255,255,.12));backdrop-filter:blur(26px) saturate(170%);-webkit-backdrop-filter:blur(26px) saturate(170%);border:1px solid rgba(255,255,255,.7);box-shadow:0 1px 0 rgba(255,255,255,.9) inset,0 30px 70px -30px rgba(5,60,50,.3);border-radius:1.25rem}
+.blob{opacity:.9!important}
+#ecg{position:absolute;left:0;top:50%;width:100%;height:300px;transform:translateY(-50%);pointer-events:none;z-index:1}
+</style>
+</head>
+<body>
+
+<div id="bg" aria-hidden="true">
+  <div class="blob" style="width:520px;height:520px;background:#16e0b0;top:-160px;right:-120px"></div>
+  <div class="blob" style="width:460px;height:460px;background:#7cc8f5;bottom:-140px;left:-140px;animation-delay:-5s"></div>
+  <div class="blob" style="width:320px;height:320px;background:#9fe7d6;top:45%;left:48%;animation-delay:-9s"></div>
+  <canvas id="dots"></canvas>
+</div>
+
+<div id="hero" class="relative min-h-screen">
+  <canvas id="ecg" aria-hidden="true"></canvas>
+
+    <header class="relative z-10 px-4 pt-4" style="padding-top:calc(env(safe-area-inset-top,0px) + 1rem)">
+    <nav class="glass mx-auto flex max-w-5xl items-center justify-between px-5 py-3">
+      <a href="#" class="flex items-center gap-2 text-lg font-bold tracking-tight"><span class="grid h-7 w-7 place-items-center rounded-lg bg-ink text-sm text-paper">D</span>DiagNova<svg class="beat ml-0.5" width="16" height="16" viewBox="0 0 24 24" fill="#01aa88" aria-hidden="true"><path d="M12 21s-7.5-4.6-9.6-9.2C.9 8.4 2.7 4.5 6.4 4.5c2.1 0 3.8 1.2 5.6 3.3 1.8-2.1 3.5-3.3 5.6-3.3 3.7 0 5.5 3.9 4 7.3C19.5 16.4 12 21 12 21z"/></svg></a>
+      <div class="hidden gap-7 text-sm font-medium text-dim md:flex">
+        <a class="hover:text-ink" href="#how">How it works</a><a class="hover:text-ink" href="#clinics">For clinics</a><a class="hover:text-ink" href="#safe">Safeguards</a>
+      </div>
+      <a href="#clinics" class="btn btn-ink !py-2 text-sm">Request a demo</a>
+    </nav>
+  </header>
+
+  <main class="relative z-10 mx-auto grid max-w-6xl items-center gap-12 px-6 pb-24 pt-16 md:pt-24 lg:grid-cols-[1.15fr_1fr]">
+    <div>
+      <span class="glass inline-block !rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-widest text-teal">Built for private clinics</span>
+      <h1 class="mt-6 text-5xl font-extrabold md:text-7xl">Blood work, <span class="text-teal">understood</span> before the consultation.</h1>
+      <p class="mt-6 max-w-xl text-lg text-dim">Patients chat with an assistant or upload their lab results. DiagNova extracts every marker, flags what's out of range, and routes them to the right doctor in your clinic.</p>
+      <div class="mt-9 flex flex-wrap gap-3">
+        <a href="#clinics" class="btn btn-ink">Request a demo →</a>
+        <a href="#how" class="btn btn-glass">See how it works</a>
+      </div>
+    </div>
+
+    <div class="relative mx-auto w-full max-w-md">
+      <div class="glass bob p-5">
+        <div class="flex items-center justify-between text-sm"><span class="font-semibold">Blood analysis</span><span class="rounded-full bg-teal/10 px-2 py-0.5 text-xs font-semibold text-teal">Processed</span></div>
+        <div class="mt-5 space-y-4 text-sm">
+          <div><div class="mb-1 flex justify-between"><span>Hemoglobin</span><span class="text-dim">13.8 g/dL</span></div><div class="bar"><i style="width:62%;background:#01aa88"></i></div></div>
+          <div><div class="mb-1 flex justify-between"><span>Ferritin</span><span class="font-semibold" style="color:#c2410c">Moderate anomaly</span></div><div class="bar"><i style="width:22%;background:#f59e0b"></i></div></div>
+          <div><div class="mb-1 flex justify-between"><span>Glucose</span><span class="text-dim">0.92 g/L</span></div><div class="bar"><i style="width:48%;background:#01aa88"></i></div></div>
+        </div>
+      </div>
+      <div class="glass bob absolute -bottom-10 -left-4 max-w-[15rem] p-4 text-sm sm:-left-10" style="animation-delay:-2s">
+        <p class="font-semibold">Suggested tests to check</p>
+        <p class="mt-1 text-dim">Based on reported symptoms. Never a diagnosis.</p>
+      </div>
+      <div class="glass bob absolute -right-2 -top-8 px-4 py-3 text-sm sm:-right-8" style="animation-delay:-4s">
+        <p class="font-semibold">→ Dr. referral</p><p class="text-dim">Consultation opened</p>
+      </div>
+    </div>
+  </main>
+</div>
+
+<section id="how" class="panel mx-4 my-10 p-8 md:p-14 lg:mx-auto lg:max-w-6xl">
+  <h2 class="max-w-2xl text-4xl font-bold md:text-5xl">From chat to consultation, in one flow.</h2>
+  <div class="mt-12 grid gap-5 md:grid-cols-3">
+    <article class="glass-in p-7"><span class="text-sm font-semibold text-teal">01</span><h3 class="mt-8 text-xl font-semibold">Chat or upload</h3><p class="mt-3 text-sm text-dim">Patients talk to the assistant or submit a blood test. Values are read through OCR and AI extraction.</p></article>
+    <article class="glass-in p-7"><span class="text-sm font-semibold text-teal">02</span><h3 class="mt-8 text-xl font-semibold">Anomalies flagged</h3><p class="mt-3 text-sm text-dim">Each marker is compared with reference thresholds and graded mild, moderate or severe.</p></article>
+    <article class="glass-in p-7"><span class="text-sm font-semibold text-teal">03</span><h3 class="mt-8 text-xl font-semibold">Routed to a doctor</h3><p class="mt-3 text-sm text-dim">The patient is guided to the right specialist in your clinic and a consultation opens, with the analysis attached.</p></article>
+  </div>
+</section>
+
+<section id="clinics" class="mx-4 my-10 lg:mx-auto lg:max-w-6xl">
+  <div class="relative overflow-hidden rounded-xl bg-ink p-10 text-paper md:p-16">
+    <div class="blob" style="width:360px;height:360px;background:#01aa88;right:-80px;top:-100px;opacity:.5"></div>
+    <div class="relative">
+      <h2 class="max-w-2xl text-4xl font-bold md:text-5xl">Give your doctors back their time.</h2>
+      <p class="mt-5 max-w-xl" style="color:#9fb0b6">Triage lab results, prioritize urgent cases and prepare every pre-consultation automatically, for patients, doctors and administrators.</p>
+      <a href="#" class="btn mt-8 bg-paper text-ink hover:bg-teal-bright">Request a demo →</a>
+    </div>
+  </div>
+</section>
+
+<section id="safe" class="panel mx-4 my-10 p-8 md:p-14 lg:mx-auto lg:max-w-6xl">
+  <div class="grid gap-5 md:grid-cols-3">
+    <div class="glass-in p-6"><h3 class="text-lg font-semibold">Never diagnoses</h3><p class="mt-2 text-sm text-dim">A decision-support tool for the physician. It flags and suggests, the doctor decides.</p></div>
+    <div class="glass-in p-6"><h3 class="text-lg font-semibold">Justified suggestions</h3><p class="mt-2 text-sm text-dim">Every suggested test carries a justification and can be validated by a doctor.</p></div>
+    <div class="glass-in p-6"><h3 class="text-lg font-semibold">Health data, protected</h3><p class="mt-2 text-sm text-dim">Role-based access for patients, doctors and admins, with a full audit trail of analyses.</p></div>
+  </div>
+</section>
+
+<footer class="panel mx-4 mb-6 mt-10 lg:mx-auto lg:max-w-6xl"><div class="flex flex-wrap justify-between gap-3 px-8 py-6 text-sm text-dim"><span>© 2026 DiagNova</span><span>Decision support for clinicians, not a medical device.</span></div></footer>
+<script>
+(function(){
+  const cv=document.getElementById('dots'),ctx=cv.getContext('2d');
+  const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const cols=['1,170,136','22,224,176','37,150,230','90,190,250','1,200,160'];
+  let W,H,dpr,pts=[],m={x:-999,y:-999};
+  function size(){dpr=Math.min(devicePixelRatio||1,2);W=innerWidth;H=innerHeight;cv.width=W*dpr;cv.height=H*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);
+    const n=Math.round(Math.min(320,W*H/5500));
+    pts=Array.from({length:n},()=>({x:Math.random()*W,y:Math.random()*H,r:.8+Math.random()*2,vx:0,vy:0,
+      dx:(Math.random()-.5)*.25,dy:(Math.random()-.5)*.25,ph:Math.random()*6.28,c:cols[Math.floor(Math.random()*cols.length)]}))}
+  function move(e){const t=e.touches?e.touches[0]:e;m.x=t.clientX;m.y=t.clientY}
+  addEventListener('pointermove',move);addEventListener('touchmove',move,{passive:true});
+  addEventListener('pointerleave',()=>{m.x=m.y=-999});
+  addEventListener('pointerdown',e=>{move(e);for(const p of pts){const a=p.x-m.x,b=p.y-m.y,d=Math.hypot(a,b)||1;if(d<200){p.vx+=a/d*7;p.vy+=b/d*7}}});
+  function tick(t){
+    ctx.clearRect(0,0,W,H);
+    for(const p of pts){
+      p.vx+=p.dx*.02;p.vy+=p.dy*.02;
+      const a=p.x-m.x,b=p.y-m.y,d=Math.hypot(a,b);
+      if(d<150){const f=(150-d)/150;p.vx+=a/(d||1)*f*.8;p.vy+=b/(d||1)*f*.8}
+      p.vx*=.94;p.vy*=.94;p.x+=p.vx+p.dx;p.y+=p.vy+p.dy;
+      if(p.x<-5)p.x=W+5;if(p.x>W+5)p.x=-5;if(p.y<-5)p.y=H+5;if(p.y>H+5)p.y=-5;
+      const tw=.55+.45*Math.sin(t/900+p.ph);
+      ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,6.283);
+      ctx.fillStyle='rgba('+p.c+','+(.35+.5*tw).toFixed(2)+')';ctx.shadowColor='rgba('+p.c+',.8)';ctx.shadowBlur=6;ctx.fill();
+    }
+    ctx.shadowBlur=0;
+    if(!reduce)requestAnimationFrame(tick);
+  }
+  size();addEventListener('resize',size);requestAnimationFrame(tick);
+})();
+</script>
+<script>
+(function(){
+  const cv=document.getElementById('ecg'),ctx=cv.getContext('2d');
+  const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let W,H,dpr,pts=[],m={x:-999,y:-999},STEP=2,PERIOD,AMP;
+  const g=(u,c,w)=>Math.exp(-((u-c)*(u-c))/(2*w*w));
+  function wave(u){return .12*g(u,.17,.028)-.12*g(u,.35,.012)+1*g(u,.385,.0125)-.3*g(u,.425,.014)+.24*g(u,.62,.05)}
+  function homeY(x,off){const u=(((x+off)/PERIOD)%1+1)%1;return H/2-AMP*wave(u)}
+  function size(){dpr=Math.min(devicePixelRatio||1,2);W=cv.clientWidth;H=cv.clientHeight;cv.width=W*dpr;cv.height=H*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);
+    PERIOD=Math.max(380,Math.min(560,W/2.4));AMP=H*.4;
+    pts=[];for(let x=0;x<=W;x+=STEP)pts.push({hx:x,dx:0,dy:0,vx:0,vy:0})}
+  const mv=e=>{const t=e.touches?e.touches[0]:e,r=cv.getBoundingClientRect();m.x=t.clientX-r.left;m.y=t.clientY-r.top};
+  addEventListener('pointermove',mv);addEventListener('touchmove',mv,{passive:true});
+  addEventListener('pointerleave',()=>{m.x=m.y=-999});
+  addEventListener('pointerdown',e=>{mv(e);for(const p of pts){const a=p.hx+p.dx-m.x,b=p.dy+homeY(p.hx,off)-m.y,d=Math.hypot(a,b)||1;if(d<220){const f=(220-d)/220*12;p.vx+=a/d*f;p.vy+=b/d*f}}});
+  let last=0,off=0;
+  function tick(t){
+    const dt=Math.min(32,t-last||16);last=t;if(!reduce)off+=dt*.06;
+    ctx.clearRect(0,0,W,H);
+    const head=((t*.00035)%1.2-.1)*W;
+    let px=null,py=null;
+    for(const p of pts){
+      const hy=homeY(p.hx,off),x=p.hx+p.dx,y=hy+p.dy;
+      const a=x-m.x,b=y-m.y,d=Math.hypot(a,b);
+      if(d<120){const f=(120-d)/120*2;p.vx+=a/(d||1)*f;p.vy+=b/(d||1)*f}
+      p.vx+=-p.dx*.1;p.vy+=-p.dy*.1;p.vx*=.8;p.vy*=.8;p.dx+=p.vx;p.dy+=p.vy;
+      const mix=p.hx/W,r=Math.round(1+36*mix),gg=Math.round(185-35*mix),bb=Math.round(145+85*mix);
+      const edge=Math.min(1,Math.min(p.hx,W-p.hx)/(W*.14));
+      const hd=p.hx-head,pulse=Math.exp(-hd*hd/(2*60*60));
+      ctx.fillStyle='rgba('+r+','+gg+','+bb+','+((.8+.2*pulse)*edge).toFixed(2)+')';
+      const cx=p.hx+p.dx,cy=hy+p.dy,rad=1.15+.5*pulse;
+      ctx.beginPath();
+      if(px!==null){const dd=Math.hypot(cx-px,cy-py),n=Math.floor(dd/2.2);for(let k=1;k<=n;k++){const f=k/(n+1),ix=px+(cx-px)*f,iy=py+(cy-py)*f;ctx.moveTo(ix+rad,iy);ctx.arc(ix,iy,rad,0,6.283)}}
+      ctx.moveTo(cx+rad,cy);ctx.arc(cx,cy,rad,0,6.283);ctx.fill();px=cx;py=cy;
+    }
+    if(!reduce)requestAnimationFrame(tick);
+  }
+  size();addEventListener('resize',size);requestAnimationFrame(tick);
+})();
+</script>
+</body>
+</html>
